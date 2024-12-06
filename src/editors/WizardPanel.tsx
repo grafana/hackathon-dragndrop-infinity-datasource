@@ -2,7 +2,7 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { SceneComponentProps, SceneDataState, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
-import { Button, CollapsableSection, Collapse, Field, FieldSet, FilterPill, InlineField, Input, Select, Stack, useStyles2 } from '@grafana/ui';
+import { Alert, Button, CollapsableSection, Collapse, Field, FieldSet, FilterPill, InlineField, Input, Select, Stack, useStyles2 } from '@grafana/ui';
 
 import { RootSelector, SelectedFragment } from './RootSelector';
 import { WizardScene } from './WizardScene';
@@ -12,6 +12,7 @@ interface WizardPanelState extends SceneObjectState {
   columns: FieldType[];
   rootSelector: SelectedFragment[];
   loadingSpinner: boolean;
+  authIssues: boolean;
 }
 
 interface FieldType {
@@ -27,6 +28,7 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
       columns: [],
       rootSelector: [],
       loadingSpinner: false,
+      authIssues: false,
       ...state,
     });
     this.addActivationHandler(() => this.activationHandler());
@@ -68,10 +70,10 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
     this.setState({ debugOpen: !this.state.debugOpen });
   };
 
-  public addHeader = () => {
+  public addHeader = (value?: { key: string; value: string }) => {
     const sceneRoot = sceneGraph.getAncestor(this, WizardScene);
     sceneRoot.setState({
-      headers: [...sceneRoot.state.headers, { key: '', value: '' }],
+      headers: [...sceneRoot.state.headers, value ?? { key: '', value: '' }],
     });
   };
 
@@ -128,24 +130,32 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
     const styles = useStyles2(getStyles);
     const sceneRoot = sceneGraph.getAncestor(model, WizardScene);
 
-    const { debugOpen, columns, rootSelector } = model.useState();
+    const { debugOpen, columns, rootSelector, authIssues } = model.useState();
     const { urlMethod, headers } = sceneRoot.useState();
     const { data } = sceneGraph.getData(model).useState();
 
     const series = data?.series ?? [];
     const fetchErrors = series.map((s) => s.meta?.custom?.['error']).filter((s) => !!s);
-    console.log(fetchErrors);
+    const currentAuthIssues = fetchErrors.some((err) => typeof err === 'string' && err.indexOf('401') >= 0);
+    if (!authIssues && currentAuthIssues) {
+      model.setState({ authIssues: true });
+      model.addHeader({ key: 'Authorization', value: 'Bearer' });
+    } else if (authIssues && !currentAuthIssues) {
+      model.setState({ authIssues: false });
+    }
 
     const rootSelectOptions = series[0]?.fields.map((f) => ({ label: f.name, value: f.name })) ?? [];
 
     return (
       <div>
-        <CollapsableSection label="Endpoint Configuration" isOpen={false}>
+        <CollapsableSection label="Endpoint Configuration" isOpen={true}>
           <FieldSet>
             <InlineField label="Method">
               <Select options={['GET', 'POST', 'PUT'].map((v) => ({ label: v, value: v }))} value={urlMethod} onChange={(v) => model.onMethodChange(v.value!!)} />
             </InlineField>
-            <FieldSet label="Headers">
+            <div>
+              <h4>Headers</h4>
+              {authIssues && <Alert title="You seem to be unauthenticated">You can try adding authentication information using the header options below</Alert>}
               {headers.length > 0 && (
                 <table>
                   <thead>
@@ -172,7 +182,7 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
               <Button size="sm" variant="secondary" onClick={() => model.addHeader()}>
                 Add Header
               </Button>
-            </FieldSet>
+            </div>
           </FieldSet>
 
           <Collapse label="Debug query" collapsible isOpen={debugOpen} onToggle={model.toggleDebugOpen}>
