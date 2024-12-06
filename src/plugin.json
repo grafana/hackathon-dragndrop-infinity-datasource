@@ -10,6 +10,15 @@
   "alerting": true,
   "logs": true,
   "tracing": true,
+  "extensions": {
+    "addedHooks": [
+      {
+        "targets": ["dashboard/dragndrop"],
+        "title": "paste as infinity query"
+      }
+    ]
+  },
+
   "info": {
     "version": "%VERSION%",
     "updated": "%TODAY%",
