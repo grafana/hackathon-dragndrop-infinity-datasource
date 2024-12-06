@@ -7,6 +7,7 @@ import { SceneComponentProps, SceneDataState, SceneObjectBase, SceneObjectState,
 
 import { VisualizationSuggestionCard, VizTypeChangeDetails } from './VisualizationSuggestionCard';
 import { VizSuggestionSelectedEvent, WizardScene } from './WizardScene';
+import { CollapsableSection } from '@grafana/ui';
 
 interface SuggestionPanelState extends SceneObjectState {
   suggestions: VisualizationSuggestion[];
@@ -64,12 +65,7 @@ export class SuggestionPanel extends SceneObjectBase<SuggestionPanelState> {
     const { suggestions } = model.useState();
     const data = sceneGraph.getData(model).useState();
     return (
-      <div
-        className={css`
-          width: 100%;
-        `}
-      >
-        <h3>Suggestions</h3>
+      <CollapsableSection label="Suggestions" isOpen={true}>
         <div
           className={css`
             display: flex;
@@ -82,7 +78,7 @@ export class SuggestionPanel extends SceneObjectBase<SuggestionPanelState> {
             <VisualizationSuggestionCard key={index} data={data.data!} suggestion={suggestion} onChange={(v) => model.updatePanel(v)} width={200} />
           ))}
         </div>
-      </div>
+      </CollapsableSection>
     );
   };
 }

@@ -2,12 +2,25 @@ import { css } from '@emotion/css';
 import React from 'react';
 
 import { BusEventWithPayload, GrafanaTheme2, PanelModel } from '@grafana/data';
-import { SceneQueryRunner, PanelBuilders, SceneCSSGridLayout, SceneCSSGridItem, SceneObjectBase, SceneObjectState, SceneComponentProps, VizPanel, SceneObjectRef, sceneGraph } from '@grafana/scenes';
+import {
+  SceneQueryRunner,
+  SplitLayout,
+  PanelBuilders,
+  SceneFlexItem,
+  SceneFlexLayout,
+  SceneObjectBase,
+  SceneObjectState,
+  SceneComponentProps,
+  VizPanel,
+  SceneObjectRef,
+  sceneGraph,
+} from '@grafana/scenes';
 import { useStyles2 } from '@grafana/ui';
 
 import { SuggestionPanel } from './SuggestionPanel';
 import { VizTypeChangeDetails } from './VisualizationSuggestionCard';
 import { WizardPanel } from './WizardPanel';
+import { SavePanelButton } from './SavePanelButton';
 
 interface HeaderEntry {
   key: string;
@@ -15,7 +28,7 @@ interface HeaderEntry {
 }
 
 interface WizardSceneState extends SceneObjectState {
-  body: SceneCSSGridLayout;
+  body: SplitLayout;
   columns: Array<{
     selector: string;
     text?: string;
@@ -26,7 +39,7 @@ interface WizardSceneState extends SceneObjectState {
   urlMethod: string;
   headers: HeaderEntry[];
   datasourceUid?: string;
-  previewContainer: SceneObjectRef<SceneCSSGridItem>;
+  previewContainer: SceneObjectRef<SceneFlexItem>;
   appliedSuggestion?: VizTypeChangeDetails;
   addPanel: (model: PanelModel) => void;
 }
@@ -63,10 +76,9 @@ export class WizardScene extends SceneObjectBase<WizardSceneState> {
     });
 
     const previewContainer = new SceneObjectRef(
-      new SceneCSSGridItem({
-        gridColumn: '2',
-        gridRow: '1',
+      new SceneFlexItem({
         body: PanelBuilders.table().setTitle('Response Data').build(),
+        height: '400px',
       })
     );
 
@@ -79,24 +91,36 @@ export class WizardScene extends SceneObjectBase<WizardSceneState> {
       urlMethod: 'GET',
       previewContainer,
       addPanel: () => { },
-      body: new SceneCSSGridLayout({
-        templateColumns: `repeat(2, minmax(400px, 1fr))`,
-        templateRows: `repeat(2,minmax(400px,min-content))`,
-        rowGap: 2,
-        columnGap: 2,
-        children: [
-          new SceneCSSGridItem({
-            gridColumn: '1',
-            gridRow: '1/3',
-            body: new WizardPanel({ addPanel: state.addPanel }),
-          }),
-          previewContainer.resolve(),
-          new SceneCSSGridItem({
-            gridColumn: '2',
-            gridRow: '2',
-            body: new SuggestionPanel(),
-          }),
-        ],
+      body: new SplitLayout({
+        direction: 'row',
+        primary: previewContainer.resolve(),
+        secondary: new SceneFlexLayout({
+          direction: 'column',
+          children: [
+            new SceneFlexItem({
+              body: new WizardPanel({}),
+            }),
+            new SceneFlexItem({
+              body: new SuggestionPanel(),
+            }),
+            new SceneFlexItem({
+              body: new SavePanelButton({
+                onClick: () => {
+                  const queries = this.getQueries();
+                  const panel = this.state.previewContainer.resolve().state.body as VizPanel;
+                  this.state.addPanel({
+                    title: 'JSON Data',
+                    id: 0,
+                    type: panel.state.pluginId,
+                    options: panel.state.options,
+                    fieldConfig: panel.state.fieldConfig,
+                    targets: queries,
+                  });
+                },
+              }),
+            }),
+          ],
+        }),
       }),
       ...state,
     });
@@ -129,69 +153,6 @@ export class WizardScene extends SceneObjectBase<WizardSceneState> {
       this.setState({ appliedSuggestion: event.payload });
     });
   }
-
-  public createDashboard = () => {
-    const queries = this.getQueries();
-    return {
-      meta: {
-        isNew: true,
-      },
-      dashboard: {
-        annotations: {
-          list: [
-            {
-              builtIn: 1,
-              datasource: {
-                type: 'grafana',
-                uid: '-- Grafana --',
-              },
-              enable: true,
-              hide: true,
-              iconColor: 'rgba(0, 211, 255, 1)',
-              name: 'Annotations & Alerts',
-              type: 'dashboard',
-            },
-          ],
-        },
-        editable: true,
-        fiscalYearStartMonth: 0,
-        graphTooltip: 0,
-        links: [],
-        panels: [
-          {
-            datasource: {
-              type: 'yesoreyeram-infinity-datasource',
-              uid: this.state.datasourceUid,
-            },
-            fieldConfig: this.state.appliedSuggestion?.fieldConfig,
-            options: this.state.appliedSuggestion?.options,
-            type: this.state.appliedSuggestion?.pluginId ?? 'table',
-            targets: queries,
-            gridPos: {
-              x: 0,
-              y: 0,
-              w: 12,
-              h: 8,
-            },
-          },
-        ],
-        schemaVersion: 39,
-        tags: [],
-        templating: {
-          list: [],
-        },
-        time: {
-          from: 'now-1h',
-          to: 'now',
-        },
-        timepicker: {},
-        timezone: 'browser',
-        title: 'New dashboard',
-        version: 0,
-        weekStart: '',
-      },
-    };
-  };
 
   public getQueries = () => {
     const dataState = sceneGraph.getData(this).state;

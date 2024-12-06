@@ -1,23 +1,17 @@
 import { css } from '@emotion/css';
-import { debounce } from 'lodash';
 import React from 'react';
 
-import { SceneComponentProps, SceneDataState, SceneObjectBase, SceneObjectState, VizPanel, sceneGraph } from '@grafana/scenes';
-import { Button, Collapse, Field, FieldSet, FilterPill, InlineField, Input, Select, Stack, useStyles2 } from '@grafana/ui';
+import { SceneComponentProps, SceneDataState, SceneObjectBase, SceneObjectState, sceneGraph } from '@grafana/scenes';
+import { Button, CollapsableSection, Collapse, Field, FieldSet, FilterPill, InlineField, Input, Select, Stack, useStyles2 } from '@grafana/ui';
 
 import { RootSelector, SelectedFragment } from './RootSelector';
-import { Step } from './Step';
 import { WizardScene } from './WizardScene';
-import { PanelModel } from '@grafana/data';
 
 interface WizardPanelState extends SceneObjectState {
-  url: string;
   debugOpen: boolean;
-  advancedOpen: boolean;
   columns: FieldType[];
   rootSelector: SelectedFragment[];
   loadingSpinner: boolean;
-  addPanel: (model: PanelModel) => void;
 }
 
 interface FieldType {
@@ -29,13 +23,10 @@ interface FieldType {
 export class WizardPanel extends SceneObjectBase<WizardPanelState> {
   public constructor(state?: Partial<WizardPanelState>) {
     super({
-      url: '',
       debugOpen: false,
-      advancedOpen: false,
       columns: [],
       rootSelector: [],
       loadingSpinner: false,
-      addPanel: () => { },
       ...state,
     });
     this.addActivationHandler(() => this.activationHandler());
@@ -59,27 +50,6 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
     }
   };
 
-  public updateGlobalUrlDebounced = debounce(() => this.updateGlobalUrl(), 1500);
-
-  public updateGlobalUrl = () => {
-    sceneGraph.getAncestor(this, WizardScene).setState({
-      url: this.state.url,
-      columns: [],
-    });
-    this.setState({
-      loadingSpinner: false,
-    });
-  };
-
-  public onUrlChange = (url: string) => {
-    this.setState({
-      url,
-      columns: [],
-      loadingSpinner: true,
-    });
-    this.updateGlobalUrlDebounced();
-  };
-
   public onMethodChange = (method: string) => {
     sceneGraph.getAncestor(this, WizardScene).setState({
       urlMethod: method,
@@ -96,9 +66,6 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
 
   public toggleDebugOpen = () => {
     this.setState({ debugOpen: !this.state.debugOpen });
-  };
-  public toggleAdvancedOpen = () => {
-    this.setState({ advancedOpen: !this.state.advancedOpen });
   };
 
   public addHeader = () => {
@@ -157,79 +124,56 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
     });
   };
 
-  public onAddToDashboardClicked = () => {
-    const root = sceneGraph.getAncestor(this, WizardScene);
-    const queries = root.getQueries();
-    const panel = root.state.previewContainer.resolve().state.body as VizPanel;
-    this.state.addPanel({
-      title: 'JSON Data',
-      id: 0,
-      type: panel.state.pluginId,
-      options: panel.state.options,
-      fieldConfig: panel.state.fieldConfig,
-      targets: queries,
-    });
-  };
   public static Component = ({ model }: SceneComponentProps<WizardPanel>) => {
     const styles = useStyles2(getStyles);
     const sceneRoot = sceneGraph.getAncestor(model, WizardScene);
 
-    const { debugOpen, columns, rootSelector, advancedOpen, loadingSpinner, url } = model.useState();
+    const { debugOpen, columns, rootSelector } = model.useState();
     const { urlMethod, headers } = sceneRoot.useState();
     const { data } = sceneGraph.getData(model).useState();
 
     const series = data?.series ?? [];
     const fetchErrors = series.map((s) => s.meta?.custom?.['error']).filter((s) => !!s);
+    console.log(fetchErrors);
 
     const rootSelectOptions = series[0]?.fields.map((f) => ({ label: f.name, value: f.name })) ?? [];
 
     return (
       <div>
-        <Step title="Endpoint Configuration" stepNo={1}>
-          <Field invalid={fetchErrors && fetchErrors.length > 0} error={fetchErrors?.join(', ')}>
-            <Input
-              placeholder="https://raw.githubusercontent.com/grafana/grafana-infinity-datasource/main/testdata/users.json"
-              onChange={(e) => model.onUrlChange(e.currentTarget.value)}
-              value={url}
-              loading={loadingSpinner}
-            />
-          </Field>
-
-          <Collapse label="Advanced Options" collapsible isOpen={advancedOpen} onToggle={model.toggleAdvancedOpen}>
-            <FieldSet>
-              <InlineField label="Method">
-                <Select options={['GET', 'POST', 'PUT'].map((v) => ({ label: v, value: v }))} value={urlMethod} onChange={(v) => model.onMethodChange(v.value!!)} />
-              </InlineField>
-              <FieldSet label="Headers">
-                {headers.length > 0 && (
-                  <table>
-                    <thead>
-                      <th>Key</th>
-                      <th>Value</th>
-                    </thead>
-                    <tbody>
-                      {headers.map((h, idx) => (
-                        <tr key={`${idx}`}>
-                          <td className={styles.tableData}>
-                            <Input onChange={(v) => model.updateHeader(idx, v.currentTarget.value, h.value)} value={h.key} />
-                          </td>
-                          <td className={styles.tableData}>
-                            <Input onChange={(v) => model.updateHeader(idx, h.key, v.currentTarget.value)} value={h.value} />
-                          </td>
-                          <td>
-                            <Button icon="trash-alt" variant="destructive" fill="outline" onClick={() => model.removeHeader(idx)} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-                <Button size="sm" variant="secondary" onClick={() => model.addHeader()}>
-                  Add Header
-                </Button>
-              </FieldSet>
+        <CollapsableSection label="Endpoint Configuration" isOpen={false}>
+          <FieldSet>
+            <InlineField label="Method">
+              <Select options={['GET', 'POST', 'PUT'].map((v) => ({ label: v, value: v }))} value={urlMethod} onChange={(v) => model.onMethodChange(v.value!!)} />
+            </InlineField>
+            <FieldSet label="Headers">
+              {headers.length > 0 && (
+                <table>
+                  <thead>
+                    <th>Key</th>
+                    <th>Value</th>
+                  </thead>
+                  <tbody>
+                    {headers.map((h, idx) => (
+                      <tr key={`${idx}`}>
+                        <td className={styles.tableData}>
+                          <Input onChange={(v) => model.updateHeader(idx, v.currentTarget.value, h.value)} value={h.key} />
+                        </td>
+                        <td className={styles.tableData}>
+                          <Input onChange={(v) => model.updateHeader(idx, h.key, v.currentTarget.value)} value={h.value} />
+                        </td>
+                        <td>
+                          <Button icon="trash-alt" variant="destructive" fill="outline" onClick={() => model.removeHeader(idx)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <Button size="sm" variant="secondary" onClick={() => model.addHeader()}>
+                Add Header
+              </Button>
             </FieldSet>
-          </Collapse>
+          </FieldSet>
 
           <Collapse label="Debug query" collapsible isOpen={debugOpen} onToggle={model.toggleDebugOpen}>
             <Field label="Request">
@@ -239,9 +183,10 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
               <pre>{JSON.stringify(series[0]?.meta?.custom?.['data'], null, 2)}</pre>
             </Field>
           </Collapse>
-        </Step>
+        </CollapsableSection>
+        <hr />
 
-        <Step title={'Transform your data'} stepNo={2}>
+        <CollapsableSection label="Transform your data" isOpen={true}>
           <Field label="Root selector">
             <RootSelector onChange={model.onSelectorChange} value={rootSelector} options={rootSelectOptions} />
           </Field>
@@ -281,11 +226,8 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
               </div>
             </div>
           </Field>
-        </Step>
-
-        <Stack direction="row">
-          <Button onClick={model.onAddToDashboardClicked}>Add to dashboard</Button>
-        </Stack>
+        </CollapsableSection>
+        <hr />
       </div>
     );
   };
