@@ -5,17 +5,22 @@ import { QueryEditor } from './editors/query.editor';
 import { VariableEditor } from './editors/variable.editor';
 import { HelpLinks } from './editors/query.help';
 import { PasteEditor } from 'editors/paste.editor';
+import { doesDatasourceExist } from 'utils/api';
 
 export const plugin = new DataSourcePlugin(Datasource)
   .addHook<(data: string) => Promise<PasteHandler[] | null>>({
     title: 'Infinity JSON URL',
     targets: ['dashboard/dragndrop'],
     hook: async (data: string) => {
+      const dsUID = await doesDatasourceExist('yesoreyeram-infinity-datasource');
+      if (!dsUID) {
+        return [];
+      }
       const suggestions: PasteHandler[] = [
         {
           title: 'Customize infinity before adding panel',
           icon: 'edit',
-          component: PasteEditor,
+          component: PasteEditor(dsUID),
         },
       ];
       if (!data.startsWith('https://')) {
@@ -52,7 +57,7 @@ export const plugin = new DataSourcePlugin(Datasource)
                 global_query_id: '',
               },
             ] as any[],
-            datasource: { uid: 'fe5vs0dvgvsw0c', type: 'yesoreyeram-infinity-datasource' },
+            datasource: { uid: dsUID, type: 'yesoreyeram-infinity-datasource' },
           },
         });
       } else if (data.startsWith('https://')) {
@@ -86,7 +91,7 @@ export const plugin = new DataSourcePlugin(Datasource)
                 global_query_id: '',
               },
             ] as any[],
-            datasource: { uid: 'fe5vs0dvgvsw0c', type: 'yesoreyeram-infinity-datasource' },
+            datasource: { uid: dsUID, type: 'yesoreyeram-infinity-datasource' },
           },
         });
       }
