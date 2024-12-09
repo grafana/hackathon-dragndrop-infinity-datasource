@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Select } from '@grafana/ui';
 import { Stack } from '../../components/extended/Stack';
 import { EditorRow } from '../../components/extended/EditorRow';
-import { isDataQuery, fetchDatasets } from './../../app/utils';
+import { fetchDatasets } from './../../app/utils';
 import type { InfinityQuery } from './../../types';
 import { EditorField } from 'components/extended/EditorField';
 
@@ -20,7 +20,7 @@ export const UnistoreEditor = (props: UnistoreEditorProps) => {
     fetchData();
   }, [query.type]);
 
-  if ((isDataQuery(query) || query.type === 'series') && query.source === 'unistore') {
+  if (query.type === 'unistore') {
     return (
       <EditorRow label="Unistore details" collapsible={false} collapsed={true} title={() => ''}>
         <Stack gap={1} direction="row" wrap={true}>

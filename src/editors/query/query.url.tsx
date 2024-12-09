@@ -108,7 +108,7 @@ const Headers = ({ query, onChange }: { query: InfinityQuery; onChange: (value: 
   if (!(isDataQuery(query) || query.type === 'uql' || query.type === 'groq')) {
     return <></>;
   }
-  if (query.source === 'inline' || query.source === 'reference' || query.source === 'azure-blob' || query.source === 'unistore') {
+  if (query.source === 'inline' || query.source === 'reference' || query.source === 'azure-blob') {
     return <></>;
   }
   const defaultHeader = {
@@ -131,7 +131,7 @@ const QueryParams = ({ query, onChange, onRunQuery }: { query: InfinityQuery; on
   if (!(isDataQuery(query) || query.type === 'uql' || query.type === 'groq')) {
     return <></>;
   }
-  if (query.source === 'inline' || query.source === 'reference' || query.source === 'azure-blob' || query.source === 'unistore') {
+  if (query.source === 'inline' || query.source === 'reference' || query.source === 'azure-blob') {
     return <></>;
   }
   const defaultParam = {
@@ -154,7 +154,7 @@ const Body = ({ query, onChange, onRunQuery }: { query: InfinityQuery; onChange:
   if (!(isDataQuery(query) || query.type === 'uql' || query.type === 'groq')) {
     return <></>;
   }
-  if (query.source === 'inline' || query.source === 'reference' || query.source === 'azure-blob' || query.source === 'unistore') {
+  if (query.source === 'inline' || query.source === 'reference' || query.source === 'azure-blob') {
     return <></>;
   }
   const placeholderGraphQLQuery = `{ query : { }}`;
