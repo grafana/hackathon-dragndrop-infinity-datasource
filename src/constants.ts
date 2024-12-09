@@ -26,6 +26,7 @@ export const SCRAP_QUERY_TYPES: Array<SelectableValue<InfinityQueryType>> = [
   { label: 'Series', value: 'series' },
   { label: 'Global Query', value: 'global' },
   { label: 'Transformations', value: 'transformations' },
+  { label: 'Unified Storage', value: 'unistore' },
 ];
 export const INFINITY_RESULT_FORMATS: Array<SelectableValue<InfinityQueryFormat>> = [
   { label: 'Data Frame', value: 'dataframe' },
@@ -42,7 +43,6 @@ export const INFINITY_SOURCES: ScrapQuerySources[] = [
   { label: 'Inline', value: 'inline', supported_types: ['csv', 'tsv', 'json', 'xml', 'uql', 'groq'] },
   { label: 'Reference', value: 'reference', supported_types: ['csv', 'tsv', 'json', 'xml', 'uql', 'groq'] },
   { label: 'Azure Blob', value: 'azure-blob', supported_types: ['csv', 'tsv', 'json', 'xml', 'uql', 'groq'] },
-  { label: 'Unified Storage', value: 'unistore', supported_types: ['csv', 'json', 'xml', 'series'] },
   { label: 'Random Walk', value: 'random-walk', supported_types: ['series'] },
   { label: 'Expression', value: 'expression', supported_types: ['series'] },
 ];

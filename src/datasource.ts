@@ -252,10 +252,10 @@ export class Datasource extends DataSourceWithBackend<InfinityQuery, InfinityOpt
           applyGroq(t.groq, data, t.format, t.refId).then(resolve).catch(reject);
           break;
         case 'series':
-          if (t.source === 'unistore') {
-            resolve(data);
-          }
           new SeriesProvider(interpolateQuery(t, scopedVars)).query(new Date(range?.from?.toDate()).getTime(), new Date(range?.to?.toDate()).getTime()).then(resolve).catch(reject);
+          break;
+        case 'unistore':
+          new InfinityProvider(t, this).formatResults(data).then(resolve).catch(reject);
           break;
         case 'global':
           reject('Query not found');
