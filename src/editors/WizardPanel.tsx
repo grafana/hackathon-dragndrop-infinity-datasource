@@ -136,7 +136,7 @@ export class WizardPanel extends SceneObjectBase<WizardPanelState> {
 
     const series = data?.series ?? [];
     const fetchErrors = series.map((s) => s.meta?.custom?.['error']).filter((s) => !!s);
-    const currentAuthIssues = fetchErrors.some((err) => typeof err === 'string' && err.indexOf('401') >= 0);
+    const currentAuthIssues = fetchErrors.some((err) => typeof err === 'string' && (err.indexOf('401') >= 0 || err.indexOf('403') >= 0));
     if (!authIssues && currentAuthIssues) {
       model.setState({ authIssues: true });
       model.addHeader({ key: 'Authorization', value: 'Bearer' });
