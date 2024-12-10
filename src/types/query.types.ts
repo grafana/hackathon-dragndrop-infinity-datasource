@@ -2,8 +2,8 @@ import { FilterOperator } from './../constants';
 import type { DataQuery, SelectableValue } from '@grafana/data';
 
 //#region Query
-export type InfinityQueryType = 'json' | 'csv' | 'tsv' | 'xml' | 'graphql' | 'html' | 'series' | 'global' | 'uql' | 'groq' | 'google-sheets' | 'transformations';
-export type InfinityQuerySources = 'url' | 'inline' | 'azure-blob' | 'reference' | 'random-walk' | 'expression' | 'unistore';
+export type InfinityQueryType = 'json' | 'csv' | 'tsv' | 'xml' | 'graphql' | 'html' | 'series' | 'global' | 'uql' | 'groq' | 'google-sheets' | 'transformations' | 'unistore';
+export type InfinityQuerySources = 'url' | 'inline' | 'azure-blob' | 'reference' | 'random-walk' | 'expression';
 export type InfinityColumnFormat = 'string' | 'number' | 'timestamp' | 'timestamp_epoch' | 'timestamp_epoch_s' | 'boolean';
 export type InfinityQueryFormat = 'table' | 'timeseries' | 'logs' | 'trace' | 'node-graph-nodes' | 'node-graph-edges' | 'dataframe' | 'as-is';
 export type QueryBodyType = 'none' | 'form-data' | 'x-www-form-urlencoded' | 'raw' | 'graphql';
@@ -36,11 +36,6 @@ export type InfinityQueryWithAzureBlobSource<T extends InfinityQueryType> = {
   azBlobName: string;
 } & InfinityQueryWithSource<'azure-blob'> &
   InfinityQueryBase<T>;
-export type InfinityQueryWithUnistoreSource<T extends InfinityQueryType> = {
-  namespace: string;
-  dataset: string;
-} & InfinityQueryWithSource<'unistore'> &
-  InfinityQueryBase<T>;
 export type InfinityQueryWithInlineSource<T extends InfinityQueryType> = {
   data: string;
 } & InfinityQueryWithSource<'inline'> &
@@ -52,7 +47,7 @@ export type InfinityQueryWithDataSource<T extends InfinityQueryType> = {
   columns: InfinityColumn[];
   filters?: InfinityFilter[];
   format: InfinityQueryFormat;
-} & (InfinityQueryWithURLSource<T> | InfinityQueryWithInlineSource<T> | InfinityQueryWithReferenceSource<T> | InfinityQueryWithAzureBlobSource<T> | InfinityQueryWithUnistoreSource<T>) &
+} & (InfinityQueryWithURLSource<T> | InfinityQueryWithInlineSource<T> | InfinityQueryWithReferenceSource<T> | InfinityQueryWithAzureBlobSource<T>) &
   InfinityQueryBase<T>;
 export type InfinityJSONQueryOptions = {
   root_is_not_array?: boolean;
@@ -74,6 +69,10 @@ export type InfinityCSVQueryOptions = {
   columns?: string;
   comment?: string;
 };
+export type InfinityUnistoreQuery = (
+  | { dataset: string }
+) &
+  InfinityQueryWithDataSource<'unistore'>
 export type InfinityCSVQuery = (
   | { parser?: 'simple'; csv_options?: InfinityCSVQueryOptions }
   | { parser: 'uql'; uql: string }
@@ -98,10 +97,9 @@ export type InfinityHTMLQuery = ({ parser?: 'simple' } | ({ parser: 'backend' } 
 export type InfinitySeriesQueryBase<S extends InfinityQuerySources> = { seriesCount: number; alias: string; dataOverrides: DataOverride[] } & InfinityQueryWithSource<S> & InfinityQueryBase<'series'>;
 export type InfinitySeriesQueryRandomWalk = {} & InfinitySeriesQueryBase<'random-walk'>;
 export type InfinitySeriesQueryExpression = { expression?: string } & InfinitySeriesQueryBase<'expression'>;
-export type InfinitySeriesQueryUnistore = { dataset: string } & InfinitySeriesQueryBase<'unistore'>;
-export type InfinitySeriesQuery = InfinitySeriesQueryRandomWalk | InfinitySeriesQueryExpression | InfinitySeriesQueryUnistore;
+export type InfinitySeriesQuery = InfinitySeriesQueryRandomWalk | InfinitySeriesQueryExpression;
 export type InfinityGlobalQuery = { global_query_id: string } & InfinityQueryBase<'global'>;
-export type InfinityDataQuery = InfinityJSONQuery | InfinityCSVQuery | InfinityTSVQuery | InfinityXMLQuery | InfinityGraphQLQuery | InfinityHTMLQuery;
+export type InfinityDataQuery = InfinityJSONQuery | InfinityCSVQuery | InfinityTSVQuery | InfinityXMLQuery | InfinityGraphQLQuery | InfinityHTMLQuery | InfinityUnistoreQuery;
 export type InfinityDestinationQuery = InfinityDataQuery | InfinitySeriesQuery;
 export type InfinityLegacyQuery = InfinityDestinationQuery | InfinityGlobalQuery;
 export type InfinityUQLQuerySource = InfinityQueryWithURLSource<'uql'> | InfinityQueryWithInlineSource<'uql'>;

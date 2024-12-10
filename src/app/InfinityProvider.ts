@@ -37,6 +37,8 @@ export class InfinityProvider {
       case 'csv':
       case 'tsv':
         return new CSVParser(res, query).getResults();
+      case 'unistore':
+        return res;
       default:
         return undefined;
     }
